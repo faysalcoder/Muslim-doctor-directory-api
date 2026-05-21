@@ -1,0 +1,20 @@
+RewriteEngine On
+RewriteBase /nopm-api/
+
+# Handle OPTIONS preflight — let PHP respond to it
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^ - [L]
+
+# Normal routing
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^ index.php [L]
+
+Options -Indexes
+
+# ── Prevent PHP errors from being printed as HTML into JSON responses ──────
+php_flag display_errors off
+php_flag display_startup_errors off
+php_value error_reporting 0
