@@ -73,6 +73,7 @@ if (!empty($doctors)) {
     // Attach gallery to each doctor
     foreach ($doctors as &$doctor) {
         $doctor['gallery'] = $imageMap[$doctor['id']] ?? [];
+        unset($doctor['password_hash']);
     }
     unset($doctor);
 } else {

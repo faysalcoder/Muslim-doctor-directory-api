@@ -22,6 +22,7 @@ if (!$doctor) error_response('Doctor not found', 404);
 $imgStmt = $pdo->prepare('SELECT id, image, created_at FROM doctor_images WHERE doctor_id = :id ORDER BY id DESC');
 $imgStmt->execute(['id' => $id]);
 $doctor['gallery'] = $imgStmt->fetchAll();
+unset($doctor['password_hash']);
 
 // Response shape: { success, data: { ...doctor fields flat } }
 // Matches React getDoctorById() → expects res.data to be the doctor object directly

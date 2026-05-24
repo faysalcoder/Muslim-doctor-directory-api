@@ -66,10 +66,11 @@ if (!empty($doctors)) {
     }
     foreach ($doctors as &$doctor) {
         $doctor['gallery'] = $imageMap[$doctor['id']] ?? [];
+        unset($doctor['password_hash']);
     }
     unset($doctor);
 } else {
-    foreach ($doctors as &$doctor) { $doctor['gallery'] = []; }
+    foreach ($doctors as &$doctor) { $doctor['gallery'] = []; unset($doctor['password_hash']); }
     unset($doctor);
 }
 

@@ -9,37 +9,48 @@ require_once __DIR__ . '/../config/database.php';
 send_cors_headers();
 require_admin();
 
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') error_response('Method not allowed', 405);
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+    error_response('Method not allowed', 405);
+}
 
-$pdo = db();
+try {
+    $pdo = db();
+    $totalDoctors = (int)$pdo->query('SELECT COUNT(*) FROM doctors')->fetchColumn();
+    $verifiedDoctors = (int)$pdo->query("SELECT COUNT(*) FROM doctors WHERE status = 'verified'")->fetchColumn();
+    $pendingDoctors = (int)$pdo->query("SELECT COUNT(*) FROM doctors WHERE status = 'pending'")->fetchColumn();
+    $inactiveDoctors = (int)$pdo->query("SELECT COUNT(*) FROM doctors WHERE status = 'inactive'")->fetchColumn();
+    $totalForumPosts = (int)$pdo->query('SELECT COUNT(*) FROM forum_posts')->fetchColumn();
+    $totalForumComments = (int)$pdo->query('SELECT COUNT(*) FROM forum_comments')->fetchColumn();
+    $totalJobs = (int)$pdo->query('SELECT COUNT(*) FROM job_posts')->fetchColumn();
+    $totalAvailability = (int)$pdo->query('SELECT COUNT(*) FROM doctor_availability')->fetchColumn();
 
-$totalDoctors    = (int)$pdo->query('SELECT COUNT(*) FROM doctors')->fetchColumn();
-$verifiedDoctors = (int)$pdo->query("SELECT COUNT(*) FROM doctors WHERE status = 'verified'")->fetchColumn();
-$pendingDoctors  = (int)$pdo->query("SELECT COUNT(*) FROM doctors WHERE status = 'pending'")->fetchColumn();
-$inactiveDoctors = (int)$pdo->query("SELECT COUNT(*) FROM doctors WHERE status = 'inactive'")->fetchColumn();
+    $latestDoctors = $pdo->query('SELECT id, name, specialty, status, profile_image, created_at FROM doctors ORDER BY id DESC LIMIT 5')->fetchAll();
+    foreach ($latestDoctors as &$doc) {
+        $doc['doctor_id'] = $doc['id'];
+    }
+    unset($doc);
 
-$latestDoctors = $pdo->query('
-    SELECT id, doctor_id, name, specialty, status, profile_image, created_at
-    FROM doctors ORDER BY id DESC LIMIT 5
-')->fetchAll();
+    $latestForum = $pdo->query('SELECT id, title, type, status, created_at FROM forum_posts ORDER BY id DESC LIMIT 5')->fetchAll();
+    $latestJobs = $pdo->query('SELECT id, post_name, job_location, status, created_at FROM job_posts ORDER BY id DESC LIMIT 5')->fetchAll();
 
-$recentGallery = $pdo->query('
-    SELECT di.id, di.image, di.created_at, d.name AS doctor_name, d.id AS doctor_ref_id
-    FROM doctor_images di
-    INNER JOIN doctors d ON d.id = di.doctor_id
-    ORDER BY di.id DESC LIMIT 8
-')->fetchAll();
-
-// 'stats' key — matches what the React frontend getDashboardStats() expects
-json_response([
-    'success' => true,
-    'stats' => [
-        'totalDoctors' => $totalDoctors,
-        'verified'     => $verifiedDoctors,
-        'pending'      => $pendingDoctors,
-        'inactive'     => $inactiveDoctors,
-    ],
-    // Extra data the admin dashboard can use
-    'latestDoctors' => $latestDoctors,
-    'recentGallery' => $recentGallery,
-]);
+    json_response([
+        'success' => true,
+        'stats' => [
+            'totalDoctors' => $totalDoctors,
+            'verified' => $verifiedDoctors,
+            'pending' => $pendingDoctors,
+            'inactive' => $inactiveDoctors,
+            'forumPosts' => $totalForumPosts,
+            'forumComments' => $totalForumComments,
+            'jobs' => $totalJobs,
+            'availability' => $totalAvailability,
+        ],
+        'latestDoctors' => $latestDoctors,
+        'latestForum' => $latestForum,
+        'latestJobs' => $latestJobs,
+    ]);
+} catch (Throwable $e) {
+    error_response('Failed to load dashboard stats', 500, [
+        'error' => $e->getMessage(),
+    ]);
+}

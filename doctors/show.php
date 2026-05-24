@@ -23,5 +23,6 @@ if (!$doctor) error_response('Doctor not found', 404);
 $imgStmt = $pdo->prepare('SELECT id, image, created_at FROM doctor_images WHERE doctor_id = :id ORDER BY id DESC');
 $imgStmt->execute(['id' => $id]);
 $doctor['gallery'] = $imgStmt->fetchAll();
+unset($doctor['password_hash']);
 
 success_response('Doctor loaded', ['doctor' => $doctor]);
